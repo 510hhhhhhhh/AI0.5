@@ -10,10 +10,13 @@ if __name__ == '__main__':
     mypose_pub = rospy.Publisher('my_pose', Odometry, queue_size=1)
     tflistener = tf.TransformListener()
     pose = Odometry()
-    rate = rospy.Rate(10.0)
+    pose.header.frame_id = 'map'
+    pose.child_frame_id = 'base_link'
+
+    rate = rospy.Rate(40.0)
     while not rospy.is_shutdown():
         try:
-            t, q = tflistener.lookupTransform("/map", "/robot_0/base_link", rospy.Time(0))
+            t, q = tflistener.lookupTransform("/map", "/base_link", rospy.Time(0))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
         pose.pose.pose.position.x = t[0]

@@ -90,40 +90,53 @@ class Plan():
         goal_ys= np.zeros(10)
         goal_yaws= np.zeros(10)
         for i in range(0,5):
-            up_x =env.lastpose[0] + 1
-            down_x =env.lastpose[0] -1
-            up_y =  env.lastpose[1] + 1
-            down_y =env.lastpose[1] -1
+            up_x =env.lastpose[0] + 1.5
+            down_x =env.lastpose[0] -1.5
+            up_y =  env.lastpose[1] + 1.5
+            down_y =env.lastpose[1] -1.5
             goal_xs[i] = random.uniform(down_x, up_x)
             goal_ys[i] = random.uniform(down_y, up_y)
             goal_yaws[i] = 0
             if i == 0:
-                for k in range(0, 12):
-                    count = env.MyPose['theta'] + 30
-                    print 'count %s' % (env.MyPose['theta'])
-                    print 'count %s' % (count)
+                for k in range(0,1):
+                    if env.gimbalYawSave > 0:
+                        count = env.MyPose['theta'] + 180
+                    else:
+                        count = env.MyPose['theta'] - 180
+                        #if count > 180:
+                            #count = count - 360
                     if count > 180:
-                        count = count - 360
-                        print 'count %s' % (count)
+                        count = -360 + count
+                    if count < -180:
+                        count = 360 + count
+
+                    print 'MyPose %s' % (env.MyPose['theta'])
+                    print 'count %s' % (count)
                     if env.isActionAvaliable(env.MyPose['x'], env.MyPose['y'], count):  # 共转1圈
                         controller.send_goal(env.navgoal)
-                        time.sleep(1)
                         print 'twist----twist----twist----twist----twist----twist----'
+                        while(env.MyPose['theta'] - count > 40 and env.enemyNew == False):
+                            tin = 1
+                            print 'MyPose %s' % (env.MyPose['theta'])
+                            #time.sleep(0.5)
+                            print 'count %s' % (count)
+
                     else:
                         pass
                     if (env.enemyNew):
                         #env.enemyNew = False
                         break
+                #print 'count %s' % (env.MyPose['theta'])
             if (env.enemyNew):
-                env.enemyNew = False
+                #env.enemyNew = False
                 break
 
             if env.isActionAvaliable(goal_xs[i],goal_ys[i],goal_yaws[i]):#判断目标点是否可行
                 controller.send_goal(env.navgoal)#发送目标
-                # while (((goal_xs[i] - env.MyPose['x']) * (goal_xs[i] - env.MyPose['x']) + (goal_ys[i] - env.MyPose['y']) * (goal_ys[i] - env.MyPose['y'])) > 0.3):
-                time.sleep(2)
-                print '++++++++++++++sending patrol goal-%s successful+++++++++++'  % (i+1)
+                print '++++++++++++++sending patrol goal-%s successful+++++++++++' % (i + 1)
                 print 'goalx%s\tgoaly%s\t' % (goal_xs[i], goal_ys[i])
+                while ((((goal_xs[i] - env.MyPose['x']) * (goal_xs[i] - env.MyPose['x']) + (goal_ys[i] - env.MyPose['y']) * (goal_ys[i] - env.MyPose['y'])) > 0.3) and env.enemyNew == False):
+                    tin = 1
             else:
                 pass
 

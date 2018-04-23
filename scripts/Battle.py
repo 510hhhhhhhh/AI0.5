@@ -29,8 +29,11 @@ class BattleEnv():
         self.EnemyPose = EnemyPos()
         self.Gimbal = EnemyPos()
         self.enemyNew = False
+        self.EnemyPoseSave = EnemyPos()
         self.totalhurt = [0, 0]
         self.lastpose = [4, 2.5, 0]
+        self.num = 0
+        self.gimbalYawSave = 0
         rospy.init_node('BattleSim')
 
     def reset(self):
@@ -79,12 +82,24 @@ class BattleEnv():
 
     def getEnemyPoseCallback(self, data):
         # data = EnemyPos()
-        self.EnemyPose.enemy_yaw = data.enemy_yaw
+        self.EnemyPose.enemy_yaw = - data.enemy_yaw
         self.EnemyPose.enemy_pitch = data.enemy_pitch
-        self.EnemyPose.enemy_dist = data.enemy_dist
+        self.EnemyPose.enemy_dist = data.enemy_dist / 1000
         if self.EnemyPose.enemy_dist != 0:
+            self.num = 0
             self.enemyNew = True
-        # print('Get enemy pose')
+            self.EnemyPoseSave.enemy_yaw = - data.enemy_yaw
+            self.EnemyPoseSave.enemy_pitch = data.enemy_pitch
+            self.EnemyPoseSave.enemy_dist = data.enemy_dist / 1000
+        else:
+            self.num = self.num + 1
+        if self.num > 50:
+            self.enemyNew = False
+            self.EnemyPoseSave.enemy_yaw = 0
+            self.EnemyPoseSave.enemy_pitch = 0
+            self.EnemyPoseSave.enemy_dist = 0
+            self.num = 0
+
 
     def getGimbalPoseCallback(self, data):
         # data = EnemyPos()
@@ -169,6 +184,7 @@ class BattleEnv():
             self.navgoal.pose.orientation.y = quat[1]
             self.navgoal.pose.orientation.z = quat[2]
             self.navgoal.pose.orientation.w = quat[3]
+            self.navgoal.header.stamp = rospy.Time().now()
             ok = True
         else:
             print 'cant move!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
@@ -237,23 +253,23 @@ class BattleEnv():
     def render(self):
         pass
 
+    def shoot_fric_wheel(self,shoot_cmd,controller):
+        shoot_cmd.fric_wheel_spd = 1215  # 摩擦轮转速设置
     #发弹命令
     def shooting(self,shoot_cmd,controller):
-        shoot_cmd.fric_wheel_spd = 1500#摩擦轮转速设置
         shoot_cmd.fric_wheel_run = 1#开关摩擦轮
         shoot_cmd.shoot_cmd = 1#单发命令
         shoot_cmd.c_shoot_cmd =0#连发命令
-        time.sleep(0.5)
         controller.shoot(shoot_cmd)#发布射击命令
 
     def shooting_plus(self, shoot_cmd, controller):
-        shoot_cmd.fric_wheel_spd = 1500  # 摩擦轮转速设置
+      #  shoot_cmd.fric_wheel_spd = 1215  # 摩擦轮转速设置
         shoot_cmd.fric_wheel_run = 1  # 开关摩擦轮
         shoot_cmd.shoot_cmd = 0  # 单发命令
         shoot_cmd.c_shoot_cmd = 1  # 连发命令
         controller.shoot(shoot_cmd)  # 发布射击命令
     def shooting_stop(self, shoot_cmd, controller):
-        shoot_cmd.fric_wheel_spd = 1500  # 摩擦轮转速设置
+      #  shoot_cmd.fric_wheel_spd = 1215# 摩擦轮转速设置
         shoot_cmd.fric_wheel_run = 1  # 开关摩擦轮
         shoot_cmd.shoot_cmd = 0  # 单发命令
         shoot_cmd.c_shoot_cmd = 0  # 连发命令
